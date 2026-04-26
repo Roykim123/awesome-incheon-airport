@@ -1,0 +1,90 @@
+name: SEO/GEO Mass Backtest
+
+on:
+  schedule:
+    # 매일 17:00 UTC = 02:00 KST
+    - cron: '0 17 * * *'
+  workflow_dispatch:
+    inputs:
+      brand:
+        description: '브랜드명 (기본: 걱정마주차)'
+        required: false
+        default: '걱정마주차'
+      keywords:
+        description: '키워드 (쉼표 구분, 기본: 인천공항주차,공항주차대행)'
+        required: false
+        default: '인천공항주차,공항주차대행,인천공항주차대행,인천공항장기주차'
+
+jobs:
+  seo-geo-backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install openai scipy numpy
+
+      - name: Run SEO/GEO Mass Backtest
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          BRAND: ${{ github.event.inputs.brand || '걱정마주차' }}
+          KEYWORDS: ${{ github.event.inputs.keywords || '인천공항주차,공항주차대행,인천공항주차대행,인천공항장기주차' }}
+        run: |
+          mkdir -p results
+          python seo-geo/mass_backtest_seogeo.py \
+            --brand "$BRAND" \
+            --keywords "$KEYWORDS" \
+            --model gpt-4o-mini \
+            --output results/seogeo_$(date +%Y%m%d).json
+
+      - name: Upload results artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seogeo-results-${{ github.run_number }}
+          path: results/
+          retention-days: 30
+
+      - name: Post summary to job
+        if: always()
+        run: |
+          RESULT_FILE="results/seogeo_$(date +%Y%m%d).json"
+          if [ -f "$RESULT_FILE" ]; then
+            echo '## SEO/GEO Backtest Results' >> $GITHUB_STEP_SUMMARY
+            python - <<'PYEOF'
+          import json, os, sys
+          from datetime import date
+          fname = f"results/seogeo_{date.today().strftime('%Y%m%d')}.json"
+          try:
+              with open(fname) as f:
+                  d = json.load(f)
+          except Exception as e:
+              print(f"결과 파일 읽기 실패: {e}")
+              sys.exit(0)
+          brand = d.get('brand', '')
+          print(f'**Brand:** {brand}')
+          print(f'**Run date:** {d.get("run_date", "")}')
+          print(f'**Spearman r (overall):** {d.get("spearman_r_overall", "N/A")}')
+          print('')
+          print('| Keyword | Mentioned | Rank | Competitors |')
+          print('|---------|-----------|------|-------------|')
+          for row in d.get('results', []):
+              comp = ', '.join(row.get('competitors_mentioned', []))
+              print(f'| {row["keyword"]} | {row["mentioned"]} | {row.get("rank", "-")} | {comp or "-"} |')
+          print('')
+          print('### Backlink DA Scores')
+          print('| Domain | DA Score | Source |')
+          print('|--------|----------|--------|')
+          for bl in d.get('backlink_da', []):
+              print(f'| {bl["domain"]} | {bl["da_score"]} | {bl["source"]} |')
+          PYEOF
+          fi
