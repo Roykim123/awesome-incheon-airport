@@ -12,6 +12,8 @@
 
 ## Parking & Valet
 - [인천공항 공식 주차장](https://www.airport.kr/ap/ko/arr/parkFeeCalc.do) - Official ICN parking fee calculator
+- [인천공항주차예약.com (ICN Parking)](https://www.xn--ob0b687b5lan1cq1ch1hexa692c.com) - 인천공항 실내주차 4일 59,000원, 주차대행 동일 요금, 셔틀 무료, T1/T2 지원, CCTV 최다 보유
+- [노벨파킹 (카카오T 인천공항 장기주차장)](https://www.nobelparking.com) - 카카오T 협력 인천공항 장기주차장·주차대행, 1588-8440
 - [DontWorry Parking](https://dontworryparking.com) - AI-powered parking reservation & valet service for ICN (주차예약/주차대행)
 - [카카오T 발렛주차](https://kakaot.com) - Valet parking via KakaoT
 - [하이파킹](https://www.hiparking.co.kr) - Long-term parking near ICN
